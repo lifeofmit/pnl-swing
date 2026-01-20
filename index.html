@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Trade Calculator v3</title>
+    <style>
+        /* Basic Styling */
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: #f0f2f5;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .calculator-card {
+            background: white;
+            padding: 2rem;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            width: 100%;
+            max-width: 400px;
+        }
+
+        h2 {
+            text-align: center;
+            color: #333;
+            margin-top: 0;
+            margin-bottom: 1.5rem;
+        }
+
+        .section-label {
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: #007bff;
+            margin-bottom: 10px;
+            margin-top: 25px;
+            font-weight: 700;
+            border-bottom: 2px solid #f0f2f5;
+            padding-bottom: 5px;
+        }
+
+        .input-group {
+            margin-bottom: 1rem;
+            position: relative;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 0.4rem;
+            color: #555;
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+
+        input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 1rem;
+            box-sizing: border-box; 
+        }
+
+        input:focus {
+            outline: none;
+            border-color: #007bff;
+        }
+
+        /* Percentage Input Wrapper */
+        .percent-wrapper {
+            display: flex;
+            gap: 10px;
+        }
+
+        .percent-btn {
+            background-color: #6c757d;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            padding: 0 15px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 0.9rem;
+            white-space: nowrap;
+        }
+        .percent-btn:hover { background-color: #5a6268; }
+
+        /* Main Buttons */
+        .btn-main {
+            width: 100%;
+            padding: 14px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 1.1rem;
+            cursor: pointer;
+            transition: background 0.2s;
+            font-weight: bold;
+            margin-top: 15px;
+        }
+        .btn-main:hover { background-color: #0056b3; }
+
+        .btn-calc-qty {
+            width: 100%;
+            padding: 10px;
+            background-color: #28a745;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 0.95rem;
+            cursor: pointer;
+            margin-top: 5px;
+            font-weight: 600;
+        }
+        .btn-calc-qty:hover { background-color: #218838; }
+
+        /* Dynamic Text Helpers */
+        .dynamic-helper {
+            font-size: 0.85rem;
+            color: #666;
+            background: #e9ecef;
+            padding: 6px 10px;
+            border-radius: 4px;
+            margin-top: 5px;
+            display: block; /* Always take space */
+        }
+
+        .dynamic-helper span {
+            font-weight: bold;
+            color: #333;
+        }
+
+        /* Results Styling */
+        .results-container {
+            margin-top: 1.5rem;
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 1rem;
+            display: none; 
+            border: 1px solid #e9ecef;
+        }
+
+        .result-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 0.8rem;
+            font-size: 0.95rem;
+        }
+
+        .label { color: #555; }
+        .value { font-weight: bold; font-family: monospace; font-size: 1.1rem; }
+        .profit-text { color: #28a745; } 
+        .loss-text { color: #dc3545; }   
+        .neutral-text { color: #333; }   
+
+        .info-msg {
+            font-size: 0.8rem;
+            color: #d63384; /* Pinkish for alerts */
+            margin-top: 5px;
+            font-style: italic;
+            display: none;
+            font-weight: 500;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="calculator-card">
+        <h2>Smart Trade Calculator</h2>
+        
+        <div class="section-label">1. Price Levels</div>
+        <div class="input-group">
+            <label>Entry Price</label>
+            <input type="number" id="entry" placeholder="Entry" step="any" oninput="updateRealTimeCap()">
+        </div>
+        
+        <div class="input-group">
+            <label>Stop Loss (SL)</label>
+            <input type="number" id="sl" placeholder="Stop Loss" step="any">
+        </div>
+
+        <div class="input-group">
+            <label>Target Price</label>
+            <input type="number" id="target" placeholder="Target" step="any">
+        </div>
+
+        <div class="section-label">2. Capital & Risk Management</div>
+        
+        <div class="input-group">
+            <label>Total Capital Available ($)</label>
+            <input type="number" id="capital" placeholder="e.g. 80000" step="any">
+        </div>
+
+        <div class="input-group">
+            <label>Calculate Max Loss from % (Optional)</label>
+            <div class="percent-wrapper">
+                <input type="number" id="riskPercent" placeholder="Risk % (e.g. 3)" step="any">
+                <button class="percent-btn" onclick="applyRiskPercent()">Apply %</button>
+            </div>
+        </div>
+
+        <div class="input-group">
+            <label>Max Willing Loss ($)</label>
+            <input type="number" id="maxRisk" placeholder="Auto-filled or Manual" step="any">
+            
+            <button class="btn-calc-qty" onclick="calculateQty()">Calculate Safe Quantity</button>
+            <div id="qtyMsg" class="info-msg"></div>
+        </div>
+
+        <div class="section-label">3. Quantity</div>
+        <div class="input-group">
+            <label>Trade Quantity</label>
+            <input type="number" id="qty" placeholder="Quantity" step="any" oninput="updateRealTimeCap()">
+            
+            <div class="dynamic-helper" id="capHelper">
+                Capital Required: <span id="capRequiredVal">0.00</span>
+            </div>
+        </div>
+
+        <button class="btn-main" onclick="calculatePnL()">Calculate Results</button>
+
+        <div class="results-container" id="results">
+            <div class="result-row">
+                <span class="label">Profit Per Share</span>
+                <span class="value profit-text" id="pps">0.00</span>
+            </div>
+            <div class="result-row">
+                <span class="label">Total Profit</span>
+                <span class="value profit-text" id="tp">0.00</span>
+            </div>
+            
+            <hr style="border: 0; border-top: 1px solid #ddd; margin: 10px 0;">
+
+            <div class="result-row">
+                <span class="label">Loss Per Share</span>
+                <span class="value loss-text" id="lps">0.00</span>
+            </div>
+            <div class="result-row">
+                <span class="label">Total Loss</span>
+                <span class="value loss-text" id="tl">0.00</span>
+            </div>
+
+            <hr style="border: 0; border-top: 1px dashed #ddd; margin: 10px 0;">
+
+            <div class="result-row" style="background-color: #e9ecef; padding: 5px; border-radius: 4px;">
+                <span class="label" style="margin-top:2px;">Risk : Reward</span>
+                <span class="value neutral-text" id="rrr">1 : 0.00</span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Feature 1: Apply Percentage to calculate Max Risk
+        function applyRiskPercent() {
+            const capital = parseFloat(document.getElementById('capital').value);
+            const percent = parseFloat(document.getElementById('riskPercent').value);
+
+            if (isNaN(capital) || isNaN(percent)) {
+                alert("Please enter both Total Capital and Risk %.");
+                return;
+            }
+
+            const riskAmount = (capital * percent) / 100;
+            document.getElementById('maxRisk').value = riskAmount.toFixed(2);
+        }
+
+        // Feature 2: Real-time Capital Used Update
+        function updateRealTimeCap() {
+            const entry = parseFloat(document.getElementById('entry').value);
+            const qty = parseFloat(document.getElementById('qty').value);
+            const display = document.getElementById('capRequiredVal');
+
+            if (!isNaN(entry) && !isNaN(qty)) {
+                const total = entry * qty;
+                display.innerText = total.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+            } else {
+                display.innerText = "0.00";
+            }
+        }
+
+        // Logic 3: Calculate Ideal Quantity
+        function calculateQty() {
+            const entry = parseFloat(document.getElementById('entry').value);
+            const sl = parseFloat(document.getElementById('sl').value);
+            const capital = parseFloat(document.getElementById('capital').value);
+            const maxRisk = parseFloat(document.getElementById('maxRisk').value);
+            const msgBox = document.getElementById('qtyMsg');
+
+            if (isNaN(entry) || isNaN(sl) || isNaN(maxRisk)) {
+                alert("Please ensure Entry, Stop Loss, and Max Risk are filled.");
+                return;
+            }
+
+            // Default capital to infinity if not provided (to allow risk-only calc)
+            const availableCap = isNaN(capital) ? Infinity : capital;
+
+            // 1. Calculate Quantity based on RISK
+            const riskPerShare = Math.abs(entry - sl);
+            if (riskPerShare === 0) { alert("Entry and SL cannot be same."); return; }
+            const qtyByRisk = Math.floor(maxRisk / riskPerShare);
+
+            // 2. Calculate Quantity based on CAPITAL
+            const qtyByCapital = Math.floor(availableCap / entry);
+
+            // 3. Select the limiting factor
+            const finalQty = Math.min(qtyByRisk, qtyByCapital);
+
+            // Update UI
+            document.getElementById('qty').value = finalQty;
+            msgBox.style.display = 'block';
+
+            if (qtyByRisk > qtyByCapital) {
+                msgBox.innerText = `Note: Quantity limited by Capital (Max affordable: ${qtyByCapital})`;
+            } else {
+                msgBox.innerText = `Note: Quantity limited by Risk Management (Max safe: ${qtyByRisk})`;
+            }
+
+            // Trigger real-time update for capital used display
+            updateRealTimeCap();
+        }
+
+        // Logic 4: Calculate P&L
+        function calculatePnL() {
+            const entry = parseFloat(document.getElementById('entry').value);
+            const sl = parseFloat(document.getElementById('sl').value);
+            const target = parseFloat(document.getElementById('target').value);
+            const qty = parseFloat(document.getElementById('qty').value);
+
+            if (isNaN(entry) || isNaN(sl) || isNaN(target) || isNaN(qty)) {
+                alert("Please ensure all fields (Entry, SL, Target, Qty) are filled.");
+                return;
+            }
+
+            updateRealTimeCap(); // Ensure capital display is current
+
+            const isLong = entry > sl;
+            let profitPerShare, lossPerShare;
+
+            if (isLong) {
+                profitPerShare = target - entry;
+                lossPerShare = entry - sl;
+            } else {
+                profitPerShare = entry - target;
+                lossPerShare = sl - entry;
+            }
+
+            const totalProfit = profitPerShare * qty;
+            const totalLoss = lossPerShare * qty;
+
+            // R:R
+            const rewardDist = Math.abs(target - entry);
+            const riskDist = Math.abs(entry - sl);
+            let rrRatio = 0;
+            if (riskDist !== 0) rrRatio = rewardDist / riskDist;
+
+            document.getElementById('pps').innerText = profitPerShare.toFixed(2);
+            document.getElementById('tp').innerText = totalProfit.toFixed(2);
+            document.getElementById('lps').innerText = lossPerShare.toFixed(2);
+            document.getElementById('tl').innerText = totalLoss.toFixed(2);
+            document.getElementById('rrr').innerText = "1 : " + rrRatio.toFixed(2);
+
+            document.getElementById('results').style.display = 'block';
+        }
+    </script>
+
+</body>
+</html>
