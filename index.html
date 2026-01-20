@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Smart Trade Calculator v3</title>
+    <title>S.PnL by Mit Joshi</title>
     <style>
         /* Basic Styling */
         body {
@@ -129,7 +129,7 @@
             padding: 6px 10px;
             border-radius: 4px;
             margin-top: 5px;
-            display: block; /* Always take space */
+            display: block; 
         }
 
         .dynamic-helper span {
@@ -162,7 +162,7 @@
 
         .info-msg {
             font-size: 0.8rem;
-            color: #d63384; /* Pinkish for alerts */
+            color: #d63384; 
             margin-top: 5px;
             font-style: italic;
             display: none;
@@ -173,9 +173,9 @@
 <body>
 
     <div class="calculator-card">
-        <h2>Smart Trade Calculator</h2>
+        <h2>Smart Trade Calculator (₹)</h2>
         
-        <div class="section-label">1. Price Levels</div>
+        <div class="section-label">1. Price Levels (₹)</div>
         <div class="input-group">
             <label>Entry Price</label>
             <input type="number" id="entry" placeholder="Entry" step="any" oninput="updateRealTimeCap()">
@@ -194,8 +194,8 @@
         <div class="section-label">2. Capital & Risk Management</div>
         
         <div class="input-group">
-            <label>Total Capital Available ($)</label>
-            <input type="number" id="capital" placeholder="e.g. 80000" step="any">
+            <label>Total Capital Available (₹)</label>
+            <input type="number" id="capital" placeholder="e.g. 100000" step="any">
         </div>
 
         <div class="input-group">
@@ -207,7 +207,7 @@
         </div>
 
         <div class="input-group">
-            <label>Max Willing Loss ($)</label>
+            <label>Max Willing Loss (₹)</label>
             <input type="number" id="maxRisk" placeholder="Auto-filled or Manual" step="any">
             
             <button class="btn-calc-qty" onclick="calculateQty()">Calculate Safe Quantity</button>
@@ -220,7 +220,7 @@
             <input type="number" id="qty" placeholder="Quantity" step="any" oninput="updateRealTimeCap()">
             
             <div class="dynamic-helper" id="capHelper">
-                Capital Required: <span id="capRequiredVal">0.00</span>
+                Capital Required: <span id="capRequiredVal">₹0.00</span>
             </div>
         </div>
 
@@ -229,26 +229,30 @@
         <div class="results-container" id="results">
             <div class="result-row">
                 <span class="label">Profit Per Share</span>
-                <span class="value profit-text" id="pps">0.00</span>
+                <span class="value profit-text" id="pps">₹0.00</span>
             </div>
             <div class="result-row">
                 <span class="label">Total Profit</span>
-                <span class="value profit-text" id="tp">0.00</span>
+                <span class="value profit-text" id="tp">₹0.00</span>
             </div>
             
             <hr style="border: 0; border-top: 1px solid #ddd; margin: 10px 0;">
 
             <div class="result-row">
                 <span class="label">Loss Per Share</span>
-                <span class="value loss-text" id="lps">0.00</span>
+                <span class="value loss-text" id="lps">₹0.00</span>
             </div>
             <div class="result-row">
                 <span class="label">Total Loss</span>
-                <span class="value loss-text" id="tl">0.00</span>
+                <span class="value loss-text" id="tl">₹0.00</span>
             </div>
 
             <hr style="border: 0; border-top: 1px dashed #ddd; margin: 10px 0;">
 
+            <div class="result-row">
+                <span class="label">Total Capital Used</span>
+                <span class="value neutral-text" id="capUsed">₹0.00</span>
+            </div>
             <div class="result-row" style="background-color: #e9ecef; padding: 5px; border-radius: 4px;">
                 <span class="label" style="margin-top:2px;">Risk : Reward</span>
                 <span class="value neutral-text" id="rrr">1 : 0.00</span>
@@ -257,6 +261,15 @@
     </div>
 
     <script>
+        // Helper to format currency for India (e.g. 1,00,000.00)
+        function formatINR(number) {
+            return new Intl.NumberFormat('en-IN', { 
+                style: 'currency', 
+                currency: 'INR',
+                minimumFractionDigits: 2 
+            }).format(number);
+        }
+
         // Feature 1: Apply Percentage to calculate Max Risk
         function applyRiskPercent() {
             const capital = parseFloat(document.getElementById('capital').value);
@@ -279,9 +292,9 @@
 
             if (!isNaN(entry) && !isNaN(qty)) {
                 const total = entry * qty;
-                display.innerText = total.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+                display.innerText = formatINR(total);
             } else {
-                display.innerText = "0.00";
+                display.innerText = "₹0.00";
             }
         }
 
@@ -353,6 +366,7 @@
 
             const totalProfit = profitPerShare * qty;
             const totalLoss = lossPerShare * qty;
+            const capitalUsed = entry * qty;
 
             // R:R
             const rewardDist = Math.abs(target - entry);
@@ -360,10 +374,13 @@
             let rrRatio = 0;
             if (riskDist !== 0) rrRatio = rewardDist / riskDist;
 
-            document.getElementById('pps').innerText = profitPerShare.toFixed(2);
-            document.getElementById('tp').innerText = totalProfit.toFixed(2);
-            document.getElementById('lps').innerText = lossPerShare.toFixed(2);
-            document.getElementById('tl').innerText = totalLoss.toFixed(2);
+            // DOM Update using formatINR helper
+            document.getElementById('pps').innerText = formatINR(profitPerShare);
+            document.getElementById('tp').innerText = formatINR(totalProfit);
+            document.getElementById('lps').innerText = formatINR(lossPerShare);
+            document.getElementById('tl').innerText = formatINR(totalLoss);
+            
+            document.getElementById('capUsed').innerText = formatINR(capitalUsed);
             document.getElementById('rrr').innerText = "1 : " + rrRatio.toFixed(2);
 
             document.getElementById('results').style.display = 'block';
